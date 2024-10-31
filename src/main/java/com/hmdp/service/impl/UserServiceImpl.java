@@ -1,6 +1,7 @@
 package com.hmdp.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.bean.copier.CopyOptions;
 import cn.hutool.core.lang.UUID;
 import cn.hutool.core.util.RandomUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpSession;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -58,23 +60,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         //返回ok
         return Result.ok();
     }
-//    @Override
-//    public Result sendCode(String phone, HttpSession session) {
-//        //1. 校验手机号
-//        if (RegexUtils.isPhoneInvalid(phone)) {
-//            //2.如果不符合，返回错误信息
-//            return Result.fail("手机号格式错误");
-//        }
-//
-//        //3. 符合，生成验证码
-//        String code = RandomUtil.randomNumbers(6);
-//        //4. 保存验证码到session
-//        session.setAttribute("code",code);
-//        //5. 发送验证码
-//        log.debug("发送短信验证码成功，验证码:{}",code);
-//        //返回ok
-//        return Result.ok();
-//    }
 
     @Override
     public Result login(LoginFormDTO loginForm, HttpSession session) {
@@ -105,7 +90,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         String token = UUID.randomUUID().toString(true);
         //7.2 将User对象转为hashMap存储
         UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
-        Map<String, Object> userMap = BeanUtil.beanToMap(userDTO);
+        Map<String, Object> userMap = BeanUtil.beanToMap(userDTO, new HashMap<>(),
+                CopyOptions.create().setIgnoreNullValue(true).setFieldValueEditor((fieldName, fieldValue) -> fieldValue.toString()));
         stringRedisTemplate.opsForHash().putAll(LOGIN_USER_KEY + token, userMap);
         stringRedisTemplate.expire(LOGIN_USER_KEY + token, LOGIN_USER_TTL, TimeUnit.MINUTES);
         return Result.ok(token);
