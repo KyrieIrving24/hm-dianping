@@ -28,5 +28,8 @@ import static com.hmdp.utils.RedisConstants.CACHE_SHOP_TTL;
 public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IShopService {
 
 
-
+    @Override
+    public Result queryById(Long id) {
+        return null;
+    }
 }
