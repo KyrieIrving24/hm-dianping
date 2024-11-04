@@ -1,5 +1,7 @@
 package com.hmdp.service.impl;
 
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.json.JSONUtil;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
@@ -27,9 +29,26 @@ import static com.hmdp.utils.RedisConstants.CACHE_SHOP_TTL;
 @Service
 public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IShopService {
 
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     @Override
     public Result queryById(Long id) {
-        return null;
+        String key = CACHE_SHOP_KEY + id;
+        // 1.从redis中查询商铺缓存
+        String shopJson = stringRedisTemplate.opsForValue().get(key);
+        // 2.判断是否为空
+        if (StrUtil.isNotBlank(shopJson)) {
+            Shop shop = JSONUtil.toBean(shopJson, Shop.class);
+            return Result.ok(shop);
+        }
+        // 3.为空，查数据库
+        Shop shop = getById(id);
+        if (shop == null) {
+            return Result.fail("店铺不存在");
+        }
+        stringRedisTemplate.opsForValue().set(key, JSONUtil.toJsonStr(shop));
+
+        return Result.ok(shop);
     }
 }
